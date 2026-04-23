@@ -1,0 +1,153 @@
+unction mod_pl_pr(cropidx, dvi, etc,wd_s, pr_o, pl_o, ygr_o: double; var pr, pl, ygr: double): boolean;
+  //修正PR，PL
+
+
+function mod_pl_pr(cropidx, dvi, etc, wd_s, pr_o, pl_o, ygr_o: Double; var pr, pl, ygr: Double): Boolean;
+var
+w_i:double;
+
+begin
+Result := True;
+
+if (cropidx > 0) then
+begin
+    if (dvi > 0.0) and (dvi <= 2) then
+    begin
+      pr := pr_o;
+      pl := pl_o;
+      ygr := ygr_o;
+    end;
+
+end;
+
+w_i := etc-wd_s;
+
+if (cropidx = 2) then
+begin
+    if (dvi > 0.0) and (dvi <= 0.2) then
+    begin
+      pr := pr_o + min(0.05, 0.1550 - 0.2883*w_i - 0.5127*dvi - 0.1348*Sqr(w_i) + 1.4717*w_i*dvi + 1.4016*Sqr(dvi));
+      pl := min(1-pr, pl_o + max(0.05, min(0.15,-0.5649 + 3.3192*w_i + 6.8316*dvi + 2.1182*Sqr(w_i) - 19.6154*w_i*dvi - 6.0479*Sqr(dvi))));
+      ygr := ygr_o;
+    end
+    else if (dvi > 0.2) and (dvi <= 0.4) then
+    begin
+      pr := pr_o + max(-0.2, min(0.1, 0.9758 - 0.6136*w_i - 4.8023*dvi + 0.3529*Sqr(w_i) + 1.7647*w_i*dvi + 5.8434*Sqr(dvi)));
+      pl := min(1-pr, pl_o + max(-0.1, min(0.29,-8.7335 - 2.8403*w_i + 50.9339*dvi + 0.8195*Sqr(w_i) + 8.2870*w_i*dvi - 72.4986*Sqr(dvi))));
+      ygr := ygr_o;
+    end
+    else if (dvi > 0.4) and (dvi <= 0.6) then
+    begin
+      pr := pr_o + max(-0.26, min(0.1, 0.2009 + 0.2626*w_i - 1.9232*dvi - 0.0230*Sqr(w_i) - 0.1650*w_i*dvi + 2.2408*Sqr(dvi)+0.05));
+      pl := min(1-pr,pl_o + max(-0.16, min(0.39, -1.9925 - 1.2333*w_i + 7.9166*dvi + 0.0149*Sqr(w_i) + 2.3210*w_i*dvi - 7.1042*Sqr(dvi)+0.05)));
+      ygr := 0;
+    end
+    else if (dvi > 0.6) and (dvi <= 0.8) then
+    begin
+      pr := pr_o + max(-0.11, min(0.0, 0.2103 - 0.0744*w_i - 1.1638*dvi + 0.0156*Sqr(w_i) + 0.1010*w_i*dvi + 1.0816*Sqr(dvi)));
+      pl := pl_o + max(-0.15, min(0.35, -2.3455 - 0.5055*w_i + 9.1461*dvi + 0.1439*Sqr(w_i) + 0.8144*w_i*dvi - 8.3289*Sqr(dvi)));
+      ygr := 0;
+    end
+    else if (dvi > 0.8) and (dvi <= 1.0) then
+    begin
+      pr := pr_o + max(-0.12, min(0.15, -0.0300 + 0.0174*w_i - 0.4882*dvi - 0.0033*Sqr(w_i) - 0.0133*w_i*dvi + 0.5847*Sqr(dvi)));
+      pl := pl_o +  max(-0.17, min(0.46, -5.2842 + 0.3732*w_i + 11.3076*dvi + 0.0526*Sqr(w_i) - 0.6400*w_i*dvi - 5.6375*Sqr(dvi)));
+      ygr := max(0, ygr_o + max(-0.43, min(0.25, -0.5699 - 0.2802*w_i + 0.8430*dvi + 0.0060*Sqr(w_i) + 0.3211*w_i*dvi - 0.7207*Sqr(dvi))));
+    end
+    else if (dvi > 1.0) and (dvi <= 1.2) then
+    begin
+      pr := pr_o + max(-0.06, min(0.06, 3.9770 + 0.6277*w_i - 7.8229*dvi - 0.0007*Sqr(w_i) - 0.6624*w_i*dvi + 3.7689*Sqr(dvi)));
+      pl := pl_o + max(0, min(0.36, -27.7510 - 1.0956*w_i + 54.0125*dvi + 0.0699*Sqr(w_i) + 0.9538*w_i*dvi - 26.1165*Sqr(dvi)));
+      ygr := max(0, ygr_o + max(-1.8, min(0.4, -21.3950 - 0.7036*w_i + 45.0953*dvi - 0.0580*Sqr(w_i) + 0.9181*w_i*dvi - 23.8551*Sqr(dvi))));
+    end
+    else if (dvi > 1.2) and (dvi <= 1.4) then
+    begin
+      pr := pr_o + max(-0.1, min(0.05, -4.7177 - 0.0069*w_i + 7.4611*dvi - 0.0367*Sqr(w_i) + 0.0564*w_i*dvi - 2.9658*Sqr(dvi)));
+      pl := pl_o + max(0.0, min(0.2, 1.3963 + 0.4181*w_i - 1.8247*dvi - 0.0126*Sqr(w_i) - 0.2957*w_i*dvi + 0.5889*Sqr(dvi)));
+      ygr := max(0, ygr_o + max(-3.85, min(-0.68, -8.4878 + 6.0811*w_i + 12.7324*dvi - 0.0560*Sqr(w_i) - 4.7572*w_i*dvi - 6.0157*Sqr(dvi))));
+    end
+    else if (dvi > 1.4) and (dvi <= 1.6) then
+    begin
+      pr := pr_o +  max(-0.06, min(0, -21.9069 - 1.3123*w_i + 28.9790*dvi - 0.0190*Sqr(w_i) + 0.8589*w_i*dvi - 9.6046*Sqr(dvi)));
+      pl := pl_o;
+      ygr := max(0, ygr_o + max(-5, min(0, -273.1220 - 5.7132*w_i + 379.6431*dvi - 0.2139*Sqr(w_i) + 4.3493*w_i*dvi - 133.4108*Sqr(dvi))));
+    end
+    else if (dvi > 1.6) and (dvi <= 1.8) then
+    begin
+      pr := pr_o + max(-0.06, min(-0.03, 29.7964 + 1.8656*w_i - 38.6922*dvi + 0.0035*Sqr(w_i) - 0.8351*w_i*dvi + 12.2155*Sqr(dvi)));
+      pl := pl_o;
+      ygr := max(1.5, ygr_o + max(-6.4, min(0, -510.1331 + 1.2294*w_i + 612.2675*dvi + 0.6924*Sqr(w_i) - 1.9609*w_i*dvi - 184.7477*Sqr(dvi))));
+    end
+    else if (dvi > 1.8) and (dvi <= 2.0) then
+    begin
+      pr := pr_o + max(-0.06, min(0, 9.7788 - 14.4081*w_i - 9.0631*dvi - 0.2569*Sqr(w_i) + 7.7565*w_i*dvi + 2.0411*Sqr(dvi)));
+      pl := pl_o;
+      ygr := max(0, ygr_o + max(-7.5, min(0, -abs(-560.3101 + 285.6174*w_i + 548.1205*dvi + 8.4200*Sqr(w_i) - 157.4064*w_i*dvi - 136.4700*Sqr(dvi)))));
+    end
+end
+else if (cropidx = 3) then
+begin
+    if (dvi > 0.0) and (dvi <= 0.2) then
+    begin
+      pr  := pr_o  + max(-0.2, min(-0.1, -0.1518 - 0.7007*w_i - 0.0856*dvi + 0.5312*Sqr(w_i) + 3.7639*w_i*dvi - 1.0503*Sqr(dvi)));
+      pl  := min(1-pr, pl_o  + max(0.19, min(0.23,  0.1803 + 0.0838*Sin(w_i) + 0.2714*Sin(dvi))));
+      ygr := ygr_o;
+    end
+    else if (dvi > 0.2) and (dvi <= 0.4) then
+    begin
+      pr  := pr_o  + max(-0.25, min(-0.2, 0.6041 - 1.0931*w_i - 6.2235*dvi + 0.3362*Sqr(w_i) + 3.8381*w_i*dvi + 11.3488*Sqr(dvi)));
+      pl  := min(1-pr, pl_o  + max(0.05, min(0.22, -3.0875 + 4.2028*w_i + 24.0197*dvi - 1.2182*Sqr(w_i) - 14.8892*w_i*dvi - 43.5652*Sqr(dvi))));
+      ygr := ygr_o;
+    end
+    else if (dvi > 0.4) and (dvi <= 0.6) then
+    begin
+      pr  := pr_o  + max(-0.25, min(0.0, 5.2713 - 0.6722*w_i - 26.8636*dvi + 0.0029*Sqr(w_i) + 1.5186*w_i*dvi + 31.6413*Sqr(dvi)));
+      pl  := min(1-pr, pl_o  + max(0.0, min(0.22, 1.7433 + 0.1173*w_i - 5.4067*dvi + 0.0660*Sqr(w_i) - 0.4239*w_i*dvi + 4.3198*Sqr(dvi))));
+      ygr := ygr_o;
+    end
+    else if (dvi > 0.6) and (dvi <= 0.8) then
+    begin
+      pr  := pr_o  + max(-0.05, min(0.05, -0.8921 + 0.8006*w_i + 2.2180*dvi + 0.0197*Sqr(w_i) - 1.1127*w_i*dvi - 1.3768*Sqr(dvi)));
+      pl  := max(0, pl_o  + max(-0.2, min(0.11, -1.5056 - 0.0900*w_i + 3.4440*dvi - 0.0010*Sqr(w_i) + 0.1287*w_i*dvi - 2.2700*Sqr(dvi))));
+      ygr := ygr_o + max(-0.03, min(0.2, 2.2627 - 2.8402*w_i - 5.4804*dvi - 0.0855*Sqr(w_i) + 3.9744*w_i*dvi + 3.3642*Sqr(dvi)));
+    end
+    else if (dvi > 0.8) and (dvi <= 1.0) then
+    begin
+      pr  := pr_o;
+      pl  := max(0, pl_o + max(-0.2, min(0.11, 29.5602 - 0.4267*w_i - 69.8962*dvi - 0.0017*Sqr(w_i) + 0.4830*w_i*dvi + 41.1561*Sqr(dvi))));
+      ygr := max(0, ygr_o + max(-0.07, min(0.35, -65.1742 + 0.4001*w_i + 151.2468*dvi - 0.0028*Sqr(w_i) - 0.1010*w_i*dvi - 87.5066*Sqr(dvi))));
+    end
+    else if (dvi > 1.0) and (dvi <= 1.2) then
+    begin
+      pr  := pr_o  + max(0, min(0.12, -6.0841 + 1.1055*w_i + 9.5896*dvi - 0.0092*Sqr(w_i) - 1.0119*w_i*dvi - 3.6229*Sqr(dvi)));
+      pl  := pl_o  + max(0.05, min(0.45, abs(-118.0775 + 2.2616*w_i + 206.5870*dvi + 1.8655*Sqr(w_i) - 1.7361*w_i*dvi - 90.1878*Sqr(dvi))));
+      ygr := max(0, ygr_o + max(-0.14, min(0.3, 12.1395 - 0.0462*w_i - 19.8570*dvi - 0.0538*Sqr(w_i) + 0.0310*w_i*dvi + 7.9935*Sqr(dvi))));
+    end
+    else if (dvi > 1.2) and (dvi <= 1.4) then
+    begin
+      pr  := pr_o  + max(0, min(0.12, 117.8466 - 1.7445*w_i - 172.0068*dvi + 0.0392*Sqr(w_i) + 1.1813*w_i*dvi + 62.8460*Sqr(dvi)));
+      pl  := pl_o  + max(0, min(0.4, -212.9975 + 4.6427*w_i + 311.2991*dvi - 0.0717*Sqr(w_i) - 2.2759*w_i*dvi - 113.6734*Sqr(dvi)));
+      ygr := max(0,ygr_o + max(-0.48, min(0.17, 120.5244 - 2.8026*w_i - 175.8424*dvi + 0.0533*Sqr(w_i) + 1.7212*w_i*dvi + 64.0421*Sqr(dvi))));
+    end
+    else if (dvi > 1.4) and (dvi <= 1.6) then
+    begin
+      pr  := pr_o  + max(-0.05, min(0.12, 174.4192 + 9.2097*w_i - 247.6454*dvi + 0.1300*Sqr(w_i) - 6.5471*w_i*dvi + 87.9175*Sqr(dvi)));
+      pl  := pl_o;
+      ygr := max(0, ygr_o + max(-0.5, min(0, 229.1989 + 11.3813*w_i - 326.1033*dvi + 0.1594*Sqr(w_i) - 8.1095*w_i*dvi + 115.8283*Sqr(dvi))));
+    end
+    else if (dvi > 1.6) and (dvi <= 1.8) then
+    begin
+      pr  := pr_o  + max(-0.15, min(0, 259.8466 + 3.6695*w_i - 295.7268*dvi - 0.0263*Sqr(w_i) - 1.9621*w_i*dvi + 84.0547*Sqr(dvi)));
+      pl  := pl_o;
+      ygr := max(0,ygr_o + max(-0.3, min(0.15, -838.0765 + 3.5369*w_i + 1010.1173*dvi + 1.8218*Sqr(w_i) - 4.5950*w_i*dvi - 304.3142*Sqr(dvi))));
+    end
+    else if (dvi > 1.8) and (dvi <= 2.0) then
+    begin
+      pr  := pr_o  + max(-0.15, min(0, 0.8001 + 3.8273*w_i - 1.4531*dvi - 0.2039*Sqr(w_i) - 1.5963*w_i*dvi + 0.5294*Sqr(dvi)));
+      pl  := pl_o;
+      ygr := max(0,ygr_o + max(-0.6, min(0.3, -246.1303 + 8.9505*w_i + 263.1310*dvi + 0.8978*Sqr(w_i) - 9.5751*w_i*dvi - 70.4251*Sqr(dvi))));
+    end;
+
+end;
+
+end;
