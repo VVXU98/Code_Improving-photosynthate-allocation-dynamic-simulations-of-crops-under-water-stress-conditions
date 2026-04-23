@@ -1,0 +1,405 @@
+function PET_func (Cropidx, dvi,k, Tmax, Tmin, Radi, albedo, LAI: double; out pet, ETC: double) : boolean;
+  //计算潜在蒸散(Priestly–Taylor)；输入：消光系数 k，日最高气温 Tmax，日最低气温 Tmin：celsius degree; 太阳总辐射 Radi : MJ/m^2/d;
+        //地表反照率 albedo (0~1), 叶面积指数，LAI (0~): unitless; Tmax 输出：潜在蒸散 pet : mm, 作物潜在蒸腾 etc
+       //目前的算法可能有问题！
+//function cal_etc(cropidx, dvi, gpp: double; out etc : double):boolean;
+  //计算作物需水量
+
+function ET_a_func (w_i, wilt_w, water_l, PET: double; out ret : double): boolean;
+  //计算实际蒸散, 输入：土壤含水量 W_i, 作物最适下限含水量 water_l, 萎蔫点 wilt_w : cm^3/cm^3; 潜在蒸散 PET: mm;  输出：实际蒸散 ret : mm
+
+
+function root_condct(CropIdx, dvi:double; var rootcondct: double):boolean;
+   //计算根系导水率  输入：作物id，dvi，输出rootcondct 作物根系水分导度（mm·day-1·Mpa-1）
+
+function water_soil_func (prec, ev, water_l, wilt_w, fldc_w, sat_w, leakingC, depth_s, irrI,
+                          ETC, BiomR, dvi, rootcondct, salpot,bulkd, thetas, thetar,N,alpha,ks: Double;
+                          var counter : integer; var water, w_i, extra_w, wd_s, WW_DS: double) :boolean;
+  //土壤水分变化；输入：计数器 counter (0~): unitless; 土壤含水量 water, 作物最适下限含水量 water_l, 萎蔫点 wilt_w : cm^3/cm^3,
+      //田间持水量fldc_w, cm^3/cm^3; 饱和含水量 sat_w : cm^3/cm^3; 降水量 prec, 实际蒸散 ev : mm; 渗漏系leakingC, unitless; 土层厚度 depth_s, mm
+      //etc: 无水分胁迫下的植物蒸腾量，即作物潜在蒸腾 mm/day; BiomR:吸收根干重g/m^2; root_conduct: 土壤中吸收根的水分导度
+   // salpot: 土壤溶质势, satw, fldcw:土壤饱和含水量和田间持水量 v/v
+  //输出: wd_s:实际蒸腾量 （mm或kg/m^2）; w_i:土壤含水量（mm或kg/m^2）extra_w:饱和含水量,WW_DS:判断作物是否处于干旱，干旱输出1，水分充足输出0
+
+//procedure LoadXMLDocument(const FilePath: string);
+//function ParamRead(const path: string): string;
+//procedure FillHydra(var arr: THydraSoilArray);
+//function TextCode(Sand, Clay: Double): Integer;
+//土壤质地分类
+//function WaterMatricPot(Theta, ThetaS, ThetaR, N, Alpha: Double): Double;
+//用土壤含水量计算土壤水势：theta, theaa_s,theta_r:土壤含水量，饱和含水量，残留含水量，n，alpha 经验系数
+//function HydrCnd(Theta, Ks, ThetaS, ThetaR, N: Double): Double;
+//计算水力导度：输入：Ks 最大水导度；theta, theaa_s,theta_r:土壤含水量，饱和含水量，残留含水量
+
+
+
+function PET_func (Cropidx, dvi,k, Tmax, Tmin, Radi, albedo, LAI: double; out pet, ETC : double) : boolean;
+var
+  Kc_max,kc, td, kt, Tmax_k, Tmin_k, td_k, Ra, Rn, coef_f, pet_e, esp : double;
+  mj_mol : double;
+begin
+  result := true;
+  if (Tmax<Tmin) or (Radi<0) or (albedo<0) or (albedo>1) or (LAI<0) then begin
+    WriteLn('Error in PET_func. Input incorrect!');
+    result := false;
+    exit;
+  end;
+
+  Kc_max := 1.22;   //maximum crop coefficient for PET calculation
+  mj_mol := 0.44; //kg water evaporated by 1 MJ heat
+
+
+  td :=  0.6*Tmax + 0.4*Tmin; //Daily mean air temperature
+
+
+  if (Tmax<=4) then kt := 0.0133*exp(0.18*(Tmax+20))
+    else if (Tmax<=24) then  kt := 1.1
+    else kt := 0.05*(Tmax-24)+1.1;
+  PET_e := max(0, kt * Radi*(0.488-0.437*albedo)*mj_mol*(0.01*(td+29))); //气候条件决定的蒸发量, mm;  1 mm is 1 kg in 1 m^2 area.
+
+  if (LAI<=1.5) then pet := PET_e  //???? 有文献显示作物系数随LAI变化介于0.5到1.3之间, 此处作物系数总大于1.0
+    else if (LAI<=5) then  pet := ((Kc_max-1.0)*LAI+(5-1.5*Kc_max))*PET_e/3.5
+    else pet := Kc_max * PET_e;
+
+  if cropidx = 2 then
+  begin
+    if dvi <= 0 then
+      kc := 0
+    else if dvi <=0.05 then
+      kc := 0.0005
+    else if dvi <= 0.1 then
+      kc := 0.01
+    else if dvi <= 0.2 then
+      kc := 0.1
+    else if dvi <= 0.4 then
+      kc := 0.4
+    else if dvi <= 0.5 then
+      kc := 0.4
+    else if dvi <= 0.6 then
+      kc := 0.7
+    else if dvi <= 0.8 then
+      kc := 0.8
+    else if dvi <= 1.2 then
+      kc := 1.1
+    else if dvi <= 1.8 then
+      kc := 0.7
+    else if dvi <= 2.0 then
+      kc := 0.2;
+  end
+  else if cropidx = 3 then
+  begin
+    if dvi < 0.3 then
+  if dvi <= 0 then
+    kc := 0
+  else if dvi <=0.05 then
+    kc := 0.0005
+  else if dvi <= 0.5 then
+    kc := 0.005
+  else if dvi <= 0.6 then
+    kc := 0.4
+  else if dvi <= 0.8 then
+    kc := 0.85
+  else if dvi <= 1 then
+    kc := 1.05
+  else if dvi <= 1.2 then
+    kc := 1.5
+  else if dvi <= 1.6 then
+    kc := 1.35
+  else if dvi <= 1.8 then
+    kc := 1
+  else if dvi <= 2.0 then
+    kc := 0.85;
+  end;
+
+    etc := PET_e * kc;
+end;
+
+
+function ET_a_func (w_i, wilt_w, water_l, PET: double; out ret : double): boolean;
+var
+  kw : double;  //土壤供水系数(0~1)
+begin
+  result := true;
+  if (wilt_w<0) or (w_i<0) or (water_l<0) or (water_l<=wilt_w) or (PET<0) then begin
+    WriteLn('Error in ET_a_func. Input incorrect!');
+    result := false;
+    exit;
+  end;
+
+  if w_i<=wilt_w then kw := 0
+    else if w_i<=water_l then kw := (w_i-wilt_w)/(water_l-wilt_w)       //0.83: soil resistance
+    else kw := 1;
+  ret := kw * PET;
+end;
+
+
+//计算根系导水率
+function root_condct(CropIdx, dvi:double; var rootcondct:double):boolean;
+
+begin
+  Result := True;
+
+  if intCropIdx = 2 then
+  begin
+  if dvi< 0.5 then
+       rootcondct := 40
+  else
+    rootcondct := 11.85 * Power(DVI, 3)
+          - 61.38 * Power(DVI, 2)
+          + 101.25 * DVI
+          - 0.58;
+  end
+  else if intCropIdx = 3 then
+  begin
+    if dvi< 0.5 then
+       rootcondct := 40
+    else if dvi>= 0.5 then
+    rootcondct :=  -22.67 * Sin(3.49 * dvi + 0.26) + 24.51;
+  end
+
+end;
+
+
+// 计算水吸附势
+
+function water_soil_func(prec, ev, water_l, wilt_w, fldc_w, sat_w, leakingC, depth_s, irri,
+  ETC, BiomR, dvi, rootcondct, salpot, bulkd, thetas, thetar, N, alpha, ks: Double;
+  var counter: Integer; var water, w_i, extra_w, wd_s, WW_DS: Double): Boolean;
+
+const
+  NumLayer = 13;
+
+var
+  Z, Y_Root, Y_Water, Y_Mois, Mat_P, Hydr_K, WD: array of Double;
+  Z_L, Z_U, DZ, water_c: Double;
+  Root_shp, Root_scl, Water_shp, Water_scl, Height_canopy: Double;
+  Ratio, curr_YR, curr_YW, curr_YM, S, MP, HK, W: Double;
+  I: Integer;
+  rdm, irri_f,per_fc, irri_add : double;
+  deficit_l :double;
+  rnd_val, target_fc,target_vol_water: double;
+
+  function LowerIncompleteGamma(s, x: Double): Double;
+  var
+    sum, term: Double;
+    n: Integer;
+  begin
+    if (x < 0) or (s <= 0) then Exit(0);
+    if x = 0 then Exit(0);
+    sum := 1.0 / s;
+    term := sum;
+    n := 1;
+    while term > 1E-15 do
+    begin
+      term := term * x / (s + n);
+      sum := sum + term;
+      Inc(n);
+      if n > 100 then Break;
+    end;
+    Result := Power(x, s) * Exp(-x) * sum;
+  end;
+
+  function LnGamma(x: Double): Double;
+  const
+      Coeff: array[0..6] of Double = (
+      76.18009172947146,
+      -86.50532032941677,
+      24.01409824083091,
+      -1.231739572450155,
+      0.1208650973866179e-2,
+      -0.5395239384953e-5,
+      0.0
+      );
+  var
+    y, tmp, ser: Double;
+    j: Integer;
+  begin
+    y := x;
+    tmp := x + 5.5;
+    tmp := tmp - (x + 0.5) * Ln(tmp);
+    ser := 1.000000000190015;
+    for j := 0 to 5 do
+    begin
+      y := y + 1;
+      ser := ser + Coeff[j] / y;
+    end;
+    Result := -tmp + Ln(2.5066282746310005 * ser / x);
+  end;
+
+
+  function GammaCDF(x, shape, scale: Double): Double;
+  begin
+    if x <= 0 then
+      Result := 0
+    else
+      Result := LowerIncompleteGamma(shape, x / scale) / Exp(LnGamma(shape));
+  end;
+
+  function GammaPPF(p, shape, scale: Double; epsilon: Double = 1e-8): Double;
+  var
+    low, high, mid, cdf: Double;
+  begin
+    if (p <= 0.0) then Exit(0.0);
+    if (p >= 1.0) then Exit(1e10);
+    low := 0.0;
+    high := shape * scale * 10;
+    repeat
+      mid := (low + high) / 2;
+      cdf := GammaCDF(mid, shape, scale);
+      if cdf < p then low := mid else high := mid;
+    until Abs(cdf - p) < epsilon;
+    Result := mid;
+  end;
+
+  procedure Linspace(StartValue, EndValue: Double; NumPoints: Integer; var ResultArray: array of Double);
+  var
+    Step, V: Double;
+    J: Integer;
+  begin
+    Step := (EndValue - StartValue) / (NumPoints - 1);
+    V := StartValue;
+    for J := 0 to NumPoints - 1 do
+    begin
+      ResultArray[J] := V;
+      V := V + Step;
+    end;
+  end;
+
+  function WaterMatricPot(Theta, ThetaS, ThetaR, N, Alpha: Double): Double;
+  var
+    ThetaE, M, H: Double;
+  begin
+    if (ThetaS <= ThetaR) or (N <= 1) or (Alpha <= 0) or (Theta > ThetaS) then Exit(0);
+    if Theta <= ThetaR then Exit(15000);
+    ThetaE := (Theta - ThetaR) / (ThetaS - ThetaR);
+    M := 1 - 1 / N;
+    H := Power(Power(1 / ThetaE, 1 / M) - 1, 1 / N) / Alpha;
+    Result := H;
+  end;
+
+  function HydrCnd(Theta, Ks, ThetaS, ThetaR, N: Double): Double;
+  var
+    ThetaE, M, F_E, Kr: Double;
+  begin
+    if (ThetaS <= ThetaR) or (N <= 1) or (Theta <= ThetaR) then Exit(0);
+    if Theta > ThetaS then Exit(Ks);
+    ThetaE := (Theta - ThetaR) / (ThetaS - ThetaR);
+    M := 1 - 1 / N;
+    F_E := 1 - Power(1 - Power(ThetaE, 1 / M), M);
+    Kr := Power(ThetaE, 0.5) * Sqr(F_E);
+    Result := Ks * Kr;
+  end;
+
+begin
+  Result := True;
+
+  if (wilt_w < 0) or (wilt_w > fldc_w) or (fldc_w > sat_w) or
+     (water < 0) or (water_l < 0) or (water_l <= wilt_w) or
+     (prec < 0) or (ev < 0) or (irri < 0) or (counter < 0) or
+     (leakingC < 0) or (leakingC > 1) or (extra_w < 0) or (depth_s < 0) then
+  begin
+    writeln('Error in water_soil_func. Input incorrect!');
+    Result := False;
+    Exit;
+  end;
+
+
+    //记录浇灌量的情况
+    // 计算当前相对含水量
+    if   (fldc_w - wilt_w) > 0.00001 then // 防止除零
+         per_fc := 100 * ((w_i - wilt_w) / (fldc_w - wilt_w))
+    else
+        per_fc := 100; // 异常情况处理
+
+
+  water := w_i + (prec  + irri) / depth_s;
+
+
+  if water > sat_w then
+  begin
+    extra_w := extra_w + (water - sat_w) * depth_s;
+    water := sat_w;
+  end;
+
+  if extra_w - ev > 0 then
+    extra_w := (extra_w - ev) * (1 - leakingC)
+  else
+  begin
+    water := Max(wilt_w, water + (extra_w - ev) / depth_s);
+    extra_w := 0;
+    if water > fldc_w then
+      water := water - (water - fldc_w) * leakingC;
+  end;
+
+
+
+  if dvi <= 0 then
+  begin
+    w_i := water;
+    wd_s := 0;
+    Exit;
+  end;
+
+  water_c := water * depth_s;
+  Root_shp := 1.2; Root_scl := 20.0;
+  Water_shp := 1.0; Water_scl := 20.0;
+  Height_canopy := 80.0;
+
+  Z_L := Min(GammaPPF(0.0001, Root_shp, Root_scl), GammaPPF(0.0001, Water_shp, Water_scl));
+  Z_U := Max(GammaPPF(0.9999, Root_shp, Root_scl), GammaPPF(0.9999, Water_shp, Water_scl));
+  DZ := (Z_U - Z_L) / (NumLayer - 1);
+
+  SetLength(Z, NumLayer);
+  SetLength(Y_Root, NumLayer);
+  SetLength(Y_Water, NumLayer);
+  SetLength(Y_Mois, NumLayer);
+  SetLength(Mat_P, NumLayer);
+  SetLength(Hydr_K, NumLayer);
+  SetLength(WD, NumLayer);
+
+  Linspace(Z_L, Z_U, NumLayer, Z);
+
+  wd_s := 0;
+  for I := 0 to NumLayer - 2 do
+  begin
+    curr_YR := GammaCDF(Z[I+1], Root_shp, Root_scl) - GammaCDF(Z[I], Root_shp, Root_scl);
+    curr_YW := (GammaCDF(Z[I+1], Water_shp, Water_scl) - GammaCDF(Z[I], Water_shp, Water_scl)) * water_c;
+    curr_YM := curr_YW * 0.1 / DZ;
+    if I = 0 then curr_YM := curr_YW * 0.1 / Z_L;
+    S := Max(0, curr_YM - sat_w);
+    curr_YM := curr_YM - S;
+    MP := Min(15000, WaterMatricPot(curr_YM, thetas, thetar, N, alpha));
+    HK := Max(0, HydrCnd(curr_YM, ks, thetas, thetar, N));
+    W := rootcondct * Max(0, (1.5 - (MP + salpot + Height_canopy) / 10000)) * curr_YR * BiomR / 1000;
+    W := Min(W, curr_YW);
+    Y_Root[I] := curr_YR;
+    Y_Water[I] := curr_YW;
+    Y_Mois[I] := curr_YM;
+    Mat_P[I] := MP;
+    Hydr_K[I] := HK;
+    WD[I] := W;
+    wd_s := wd_s + W;
+  end;
+
+  if wd_s > ETC then
+  begin
+    Ratio := ETC / wd_s;
+    WW_DS := 0;
+  end
+  else
+  begin
+    Ratio := 1.0;
+    WW_DS := 1;
+  end;
+
+  w_i := 0;
+  for I := 0 to NumLayer - 2 do
+  begin
+    WD[I] := WD[I] * Ratio;
+    Y_Water[I] := Y_Water[I] - WD[I];
+    w_i := w_i + Y_Water[I];
+  end;
+
+  w_i := w_i/depth_s;
+
+end;
